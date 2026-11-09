@@ -97,7 +97,9 @@ export default function Analytics() {
           </div>
           <div>
             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Avg Code Quality Score</div>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{data.avg_quality_score}/100</div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+              {data.analyses_count > 0 && data.avg_quality_score > 0 ? `${data.avg_quality_score}/100` : 'N/A'}
+            </div>
           </div>
         </div>
         

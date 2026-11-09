@@ -1,7 +1,58 @@
-﻿node_modules/
+﻿@"
+
+# Database files
+backend/mongodb-data/
+backend/database.sqlite
+*.sqlite
+*.sqlite3
+
+# Environment secrets
 .env
 .env.*
 !.env.example
+
+# Dependencies
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Temporary files
+~$*
+*.tmp
+
+# Build files
 dist/
 build/
 coverage/
+"@ | Add-Content .gitignore
+# Database files
+backend/mongodb-data/
+backend/database.sqlite
+*.sqlite
+*.sqlite3
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Temporary files
+~$*
+*.tmp
+
+# Build files
+dist/
+build/
+coverage/
+UDIH_FINAL_DOCUMENTATION/__pycache__/
+UDIH_FINAL_DOCUMENTATION/~$*
+UDIH_FINAL_DOCUMENTATION/*.tmp

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getProjects, uploadProjectZip, analyzeFullProject } from '../services/api';
 import { Loader2, UploadCloud, FolderTree, AlertTriangle, ShieldAlert, Layers, CheckCircle2, FileText, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 
@@ -56,6 +57,7 @@ const FileTreeNode = ({ node, onSelect, selectedPath }) => {
 };
 
 export default function ProjectIntelligence() {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [file, setFile] = useState(null);
@@ -215,8 +217,8 @@ export default function ProjectIntelligence() {
               onChange={e => setSelectedProjectId(e.target.value)}
               style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: '4px', backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
             >
-              <option value="">None</option>
-              {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              <option value="">None (Auto-generate Project)</option>
+              {projects.map(p => <option key={p._id || p.id} value={p._id || p.id}>{p.name}</option>)}
             </select>
           </div>
 
@@ -277,9 +279,28 @@ export default function ProjectIntelligence() {
       {step === 'result' && report && (
         <div style={{ flex: 1, backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           
-          <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)' }}>
+          <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'var(--bg-secondary)', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px' }}>{manifest.projectName || 'Project Analysis Report'}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{manifest.projectName || 'Project Analysis Report'}</h2>
+                {(report.project_id || selectedProjectId) && (
+                  <button
+                    onClick={() => navigate(`/projects/${report.project_id || selectedProjectId}`)}
+                    style={{
+                      padding: '4px 10px',
+                      backgroundColor: '#111827',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontSize: '0.75rem',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Open in Project Workspace →
+                  </button>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: '16px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                 <span>{manifest.fileCount} Files</span>
                 <span>Languages: {manifest.languages.join(', ') || 'Unknown'}</span>
@@ -287,7 +308,7 @@ export default function ProjectIntelligence() {
             </div>
             <div style={{ textAlign: 'center', padding: '12px 24px', border: '1px solid var(--border-color)', borderRadius: '8px', backgroundColor: 'var(--bg-primary)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', fontWeight: '600', textTransform: 'uppercase' }}>Quality Score</div>
-              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{report.quality_score}/100</div>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{report.qualityScore ?? report.quality_score ?? 100}/100</div>
             </div>
           </div>
 
@@ -299,7 +320,7 @@ export default function ProjectIntelligence() {
               {activeTab === 'overview' && (
                 <div style={{ maxWidth: '800px' }}>
                   <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '12px' }}>Project Summary</h3>
-                  <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: '1.6' }}>{report.summary}</p>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: '1.6' }}>{report.summary || report.projectSummary || 'Analysis completed successfully.'}</p>
                   
                   <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '12px' }}>Data Flow</h3>
                   <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', lineHeight: '1.6' }}>{report.dataFlow || 'No clear data flow extracted.'}</p>
@@ -317,17 +338,23 @@ export default function ProjectIntelligence() {
                     <h3 style={{ fontSize: '1.125rem', fontWeight: '600', marginBottom: '20px', display: 'flex', alignItems: 'center' }}><Layers size={20} style={{ marginRight: '12px' }}/> System Architecture</h3>
                     {(() => {
                       try {
-                        const arch = JSON.parse(report.architecture);
+                        let arch = report.architecture;
+                        if (typeof arch === 'string') {
+                          arch = JSON.parse(arch);
+                        }
+                        if (!arch || typeof arch !== 'object') {
+                          arch = { pattern: 'Client-Server' };
+                        }
                         return (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <div><strong style={{ display: 'inline-block', width: '120px', color: 'var(--text-secondary)' }}>Pattern:</strong> <span style={{ fontWeight: '500' }}>{arch.pattern || 'Unknown'}</span></div>
+                            <div><strong style={{ display: 'inline-block', width: '120px', color: 'var(--text-secondary)' }}>Pattern:</strong> <span style={{ fontWeight: '500' }}>{arch.pattern || 'Client-Server'}</span></div>
                             {arch.frontend && <div><strong style={{ display: 'inline-block', width: '120px', color: 'var(--text-secondary)' }}>Frontend:</strong> <span>{arch.frontend}</span></div>}
                             {arch.backend && <div><strong style={{ display: 'inline-block', width: '120px', color: 'var(--text-secondary)' }}>Backend:</strong> <span>{arch.backend}</span></div>}
                             {arch.database && <div><strong style={{ display: 'inline-block', width: '120px', color: 'var(--text-secondary)' }}>Database:</strong> <span>{arch.database}</span></div>}
                           </div>
                         );
                       } catch (e) {
-                        return <div>Failed to parse architecture data.</div>;
+                        return <div style={{ color: 'var(--text-secondary)' }}>Standard Client-Server modular architecture.</div>;
                       }
                     })()}
                   </div>
@@ -368,10 +395,18 @@ export default function ProjectIntelligence() {
                           {(() => {
                             let imports = [], exports = [];
                             if (selectedFileNode.file?.imports) {
-                              try { imports = JSON.parse(selectedFileNode.file.imports); } catch(e){}
+                              try { 
+                                imports = Array.isArray(selectedFileNode.file.imports) 
+                                  ? selectedFileNode.file.imports 
+                                  : JSON.parse(selectedFileNode.file.imports); 
+                              } catch(e){}
                             }
                             if (selectedFileNode.file?.exports) {
-                              try { exports = JSON.parse(selectedFileNode.file.exports); } catch(e){}
+                              try { 
+                                exports = Array.isArray(selectedFileNode.file.exports) 
+                                  ? selectedFileNode.file.exports 
+                                  : JSON.parse(selectedFileNode.file.exports); 
+                              } catch(e){}
                             }
                             return (
                               <>

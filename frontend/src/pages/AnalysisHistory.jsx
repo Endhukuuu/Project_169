@@ -59,7 +59,7 @@ export default function AnalysisHistory() {
                   <td style={{ padding: '16px', fontSize: '0.875rem' }}>{a.project_name || 'N/A'}</td>
                   <td style={{ padding: '16px', fontSize: '0.875rem' }}>{a.language}</td>
                   <td style={{ padding: '16px', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{new Date(a.created_at).toLocaleString()}</td>
-                  <td style={{ padding: '16px', fontSize: '0.875rem', fontWeight: '500' }}>{a.quality_score}</td>
+                  <td style={{ padding: '16px', fontSize: '0.875rem', fontWeight: '500' }}>{a.qualityScore ?? a.quality_score ?? 'N/A'}</td>
                   <td style={{ padding: '16px', fontSize: '0.875rem' }}>{a.issue_count}</td>
                 </tr>
               ))}

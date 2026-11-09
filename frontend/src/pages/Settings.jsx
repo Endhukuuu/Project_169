@@ -64,7 +64,7 @@ export default function Settings() {
               <div style={{ fontWeight: 'bold' }}>{loading ? 'Checking...' : health?.status === 'ok' ? 'Running' : 'Down'}</div>
             </div>
             <div style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Database (SQLite)</div>
+              <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Database (MongoDB)</div>
               <div style={{ fontWeight: 'bold' }}>{loading ? 'Checking...' : health?.db_status || 'Disconnected'}</div>
             </div>
           </div>

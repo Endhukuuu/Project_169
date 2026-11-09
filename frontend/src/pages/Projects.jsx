@@ -1,22 +1,29 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getProjects, createProject } from '../services/api';
-import { Plus, FolderGit2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Plus, FolderGit2, ArrowRight, FileText, AlertTriangle, Layers, Calendar } from 'lucide-react';
 
 export default function Projects() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ name: '', description: '', language: 'Python' });
+  const [formData, setFormData] = useState({ name: '', description: '', language: 'JavaScript' });
+  const [submitting, setSubmitting] = useState(false);
 
   const fetchProjects = () => {
     setLoading(true);
-    getProjects().then(res => {
-      setProjects(res);
-      setLoading(false);
-    }).catch(err => {
-      console.error(err);
-      setLoading(false);
-    });
+    getProjects()
+      .then(res => {
+        setProjects(Array.isArray(res) ? res : []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -25,145 +32,327 @@ export default function Projects() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name) return;
+    if (!formData.name.trim()) return;
     try {
-      await createProject(formData);
+      setSubmitting(true);
+      const created = await createProject(formData);
       setShowModal(false);
-      setFormData({ name: '', description: '', language: 'Python' });
+      setFormData({ name: '', description: '', language: 'JavaScript' });
       fetchProjects();
+      if (created?._id) {
+        navigate(`/projects/${created._id}`);
+      }
     } catch (err) {
       console.error('Failed to create project', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Projects</h1>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '28px',
+        paddingBottom: '20px',
+        borderBottom: '1px solid var(--border-color)'
+      }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: '800', letterSpacing: '-0.02em', margin: 0 }}>
+            Projects Workspace
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: '6px 0 0 0' }}>
+            Permanent project repositories with persistent AI intelligence and review history.
+          </p>
+        </div>
+
         <button 
           onClick={() => setShowModal(true)}
           style={{
-            backgroundColor: 'var(--btn-primary-bg)',
-            color: 'var(--btn-primary-text)',
+            backgroundColor: '#000000',
+            color: '#ffffff',
             border: 'none',
-            padding: '8px 16px',
-            borderRadius: '4px',
+            padding: '10px 18px',
+            borderRadius: '6px',
             display: 'flex',
             alignItems: 'center',
-            fontWeight: '500'
+            gap: '8px',
+            fontWeight: '600',
+            fontSize: '0.85rem',
+            cursor: 'pointer'
           }}
         >
-          <Plus size={16} style={{ marginRight: '8px' }} />
-          New Project
+          <Plus size={16} />
+          <span>New Project</span>
         </button>
       </div>
 
       {loading ? (
-        <div className="animate-pulse">Loading projects...</div>
+        <div style={{ padding: '60px', textAlign: 'center', color: '#6b7280' }}>
+          Loading projects...
+        </div>
       ) : projects.length === 0 ? (
         <div style={{ 
           textAlign: 'center', 
-          padding: '64px', 
-          backgroundColor: 'var(--bg-primary)', 
+          padding: '64px 32px', 
+          backgroundColor: '#ffffff', 
           border: '1px solid var(--border-color)',
           borderRadius: '8px' 
         }}>
-          <FolderGit2 size={48} color="var(--border-dark)" style={{ margin: '0 auto 16px' }} />
-          <h3 style={{ fontSize: '1.25rem', fontWeight: '500', marginBottom: '8px' }}>No projects yet</h3>
-          <p style={{ color: 'var(--text-secondary)' }}>Create your first project to begin analyzing code.</p>
+          <FolderGit2 size={48} color="#9ca3af" style={{ margin: '0 auto 16px' }} />
+          <h3 style={{ fontSize: '1.15rem', fontWeight: '700', marginBottom: '8px', color: '#111827' }}>
+            No projects registered yet
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', maxWidth: '420px', margin: '0 auto 20px' }}>
+            Create a permanent project to analyze repository ZIP archives, save AI code reviews, and track code health metrics over time.
+          </p>
+          <button
+            onClick={() => setShowModal(true)}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#111827',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            Create Your First Project
+          </button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
-          {projects.map(p => (
-            <div key={p.id} style={{
-              backgroundColor: 'var(--bg-primary)',
-              padding: '24px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '8px' }}>{p.name}</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '16px', minHeight: '40px' }}>
-                {p.description || 'No description provided.'}
-              </p>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ 
-                  fontSize: '0.75rem', 
-                  backgroundColor: 'var(--bg-tertiary)', 
-                  padding: '4px 8px', 
-                  borderRadius: '4px',
-                  fontWeight: '500'
-                }}>
-                  {p.language}
-                </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                  {new Date(p.created_at).toLocaleDateString()}
-                </span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
+          {projects.map(p => {
+            const projectId = p._id || p.id;
+            return (
+              <div 
+                key={projectId}
+                onClick={() => navigate(`/projects/${projectId}`)}
+                style={{
+                  backgroundColor: '#ffffff',
+                  padding: '24px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  transition: 'border-color 0.15s ease, box-shadow 0.15s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = '#111827';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.06)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--border-color)';
+                  e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <span style={{ 
+                      fontSize: '0.72rem', 
+                      backgroundColor: '#f3f4f6', 
+                      color: '#374151',
+                      padding: '3px 8px', 
+                      borderRadius: '4px',
+                      fontWeight: '600',
+                      textTransform: 'uppercase'
+                    }}>
+                      {p.languages?.length > 0 ? p.languages.join(', ') : (p.language || 'Multi-language')}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Calendar size={13} />
+                      {new Date(p.createdAt || p.created_at || Date.now()).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: '700', marginBottom: '8px', color: '#111827' }}>
+                    {p.name}
+                  </h3>
+                  <p style={{ 
+                    color: '#6b7280', 
+                    fontSize: '0.85rem', 
+                    marginBottom: '16px', 
+                    lineHeight: '1.4',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}>
+                    {p.description || 'No description provided.'}
+                  </p>
+                </div>
+
+                <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', gap: '14px', fontSize: '0.78rem', color: '#4b5563' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <FileText size={14} />
+                        {p.filesCount ?? 0} files
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertTriangle size={14} />
+                        {p.issuesCount ?? 0} issues
+                      </span>
+                    </div>
+
+                    <span style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '4px', 
+                      fontSize: '0.8rem', 
+                      fontWeight: '600', 
+                      color: '#111827' 
+                    }}>
+                      View Details <ArrowRight size={14} />
+                    </span>
+                  </div>
+
+                  {user?.role === 'admin' && p.userId && typeof p.userId === 'object' && (
+                    <div style={{ marginTop: '8px', fontSize: '0.72rem', color: '#9ca3af' }}>
+                      Owner: {p.userId.name} ({p.userId.email})
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Modal */}
+      {/* Create Project Modal */}
       {showModal && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
+          backgroundColor: 'rgba(0,0,0,0.6)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 50
+          zIndex: 50,
+          padding: '16px'
         }}>
           <div style={{
-            backgroundColor: 'var(--bg-primary)',
-            padding: '32px',
+            backgroundColor: '#ffffff',
+            padding: '28px',
             borderRadius: '8px',
             width: '100%',
-            maxWidth: '500px',
+            maxWidth: '480px',
             border: '1px solid var(--border-color)',
-            boxShadow: 'var(--shadow-md)'
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
           }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '24px' }}>Create Project</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '8px', letterSpacing: '-0.01em' }}>
+              Create New Project
+            </h2>
+            <p style={{ fontSize: '0.82rem', color: '#6b7280', marginBottom: '20px' }}>
+              Permanent project repositories store analysis scans, issues, and AI code review histories.
+            </p>
+
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '8px' }}>Project Name</label>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', marginBottom: '6px' }}>
+                  Project Name *
+                </label>
                 <input 
                   type="text" 
                   required
+                  placeholder="e.g. backend-api-service"
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '9px 12px', 
+                    border: '1px solid var(--border-color)', 
+                    borderRadius: '6px',
+                    fontSize: '0.875rem'
+                  }}
                 />
               </div>
+
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '8px' }}>Description</label>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', marginBottom: '6px' }}>
+                  Description
+                </label>
                 <textarea 
+                  rows={3}
+                  placeholder="Brief summary of the repository purpose and tech stack..."
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '4px', minHeight: '80px' }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '9px 12px', 
+                    border: '1px solid var(--border-color)', 
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
+                    fontFamily: 'inherit'
+                  }}
                 />
               </div>
+
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '8px' }}>Primary Language</label>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: '600', marginBottom: '6px' }}>
+                  Primary Language
+                </label>
                 <select 
                   value={formData.language}
                   onChange={e => setFormData({...formData, language: e.target.value})}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                  style={{ 
+                    width: '100%', 
+                    padding: '9px 12px', 
+                    border: '1px solid var(--border-color)', 
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
+                    backgroundColor: '#fff'
+                  }}
                 >
-                  <option>Python</option>
-                  <option>JavaScript</option>
-                  <option>TypeScript</option>
-                  <option>Java</option>
-                  <option>C++</option>
-                  <option>SQL</option>
+                  <option value="JavaScript">JavaScript</option>
+                  <option value="TypeScript">TypeScript</option>
+                  <option value="Python">Python</option>
+                  <option value="Java">Java</option>
+                  <option value="Go">Go</option>
+                  <option value="Rust">Rust</option>
+                  <option value="C#">C#</option>
+                  <option value="C++">C++</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button type="button" onClick={() => setShowModal(false)} style={{
-                  padding: '8px 16px', border: '1px solid var(--border-dark)', backgroundColor: 'var(--btn-secondary-bg)', borderRadius: '4px'
-                }}>Cancel</button>
-                <button type="submit" style={{
-                  padding: '8px 16px', border: 'none', backgroundColor: 'var(--btn-primary-bg)', color: 'var(--btn-primary-text)', borderRadius: '4px'
-                }}>Create</button>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowModal(false)} 
+                  disabled={submitting}
+                  style={{
+                    padding: '8px 16px', 
+                    border: '1px solid var(--border-color)', 
+                    backgroundColor: '#fff', 
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={submitting}
+                  style={{
+                    padding: '8px 18px', 
+                    border: 'none', 
+                    backgroundColor: '#000', 
+                    color: '#fff', 
+                    borderRadius: '6px',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    cursor: submitting ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {submitting ? 'Creating...' : 'Create Project'}
+                </button>
               </div>
             </form>
           </div>
